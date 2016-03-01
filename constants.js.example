@@ -1,0 +1,7 @@
+module.exports = {
+    // Change this to whatever the project ID is for your site
+    PROJECT_ID: 0000,
+    OUTPUT_FILE: '/translations.json',
+    ENDPOINT: 'https://poeditor.com/api/',
+    API_KEY: 'example'
+};
