@@ -36,6 +36,7 @@ function download(data, opts, done) {
     data.langs = [];
     for (var plang in data.languages.toLocal)
         data.langs.push(plang);
+
     recursiveGetExports(data, {}, function(exports) {
         for (var polang in exports) {
             grunt.log.writeln('->'.green, polang+':', exports[polang]);
@@ -106,14 +107,20 @@ function downloadExport(url, path, handler) {
         var convertedTranslations = {};
         for (var key in translations) {
             var trans = translations[key];
+            var context = trans.context.length === 0 ? 'common' : trans.context;
 
             if (trans.term.length === 0) {
                 continue;
             }
 
-            convertedTranslations[trans.term] = trans.definition && trans.definition.length > 0 ?
+            if (typeof convertedTranslations[context] === 'undefined') {
+                convertedTranslations[context] = {};
+            }
+
+            convertedTranslations[context][trans.term] = trans.definition && trans.definition.length > 0 ?
                 trans.definition : trans.term;
         }
+
         var contents = JSON.stringify(convertedTranslations);
         // Dump the json contents to a file
         fs.writeFile(path, contents, function(err) {

@@ -1,6 +1,6 @@
 {
   "name": "grunt-poeditor-rs",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "description": "Translation library for po editor",
   "main": "download.js",
   "scripts": {
