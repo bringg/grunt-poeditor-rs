@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Marek J. Laska, Research Square, LLC.",
+  "author": "Marek J. Laska, Scott Dover, Research Square, LLC.",
   "license": "MIT",
   "dependencies": {
     "request": "~2.67.0",
