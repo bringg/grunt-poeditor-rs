@@ -1,7 +1,6 @@
 var fs = require('fs');
 var path = require('path');
 var request = require('request');
-var constants = require('./constants.js');
 
 var PoDownloader = function (
     lang,
@@ -21,6 +20,8 @@ PoDownloader.prototype.exportTranslationData = function(content) {
     content = JSON.stringify(content, null, 4)
     process.stdout.write(content);
     return;
+
+    var constants = require('./constants.js');
     fs.writeFile(__dirname + constants.OUTPUT_FILE, content, function(err) {
         if (err) {
             throw err;
@@ -86,6 +87,7 @@ if (require.main === module) {
         console.log('Usage: node ' + path.basename(process.argv[1]) + ' <lang>');
         process.abort();
     }
+    var constants = require('./constants.js');
     var project_id = process.argv[3] ? process.argv[3] : constants.PROJECT_ID;
     var downloader = new PoDownloader(process.argv[2], constants.ENDPOINT, constants.API_KEY, project_id, null)
     downloader.downloadTranslations();
