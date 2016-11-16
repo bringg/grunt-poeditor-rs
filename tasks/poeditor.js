@@ -2,7 +2,8 @@
 
 var fs = require('fs'),
     path = require('path'),
-    request = require('request');
+    request = require('request'),
+    keypath = require('keypather')();
 
 var grunt;
 
