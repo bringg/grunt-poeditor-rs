@@ -25,10 +25,13 @@ module.exports = function(g) {
             });
         }
 
-        // download
-        else if (data.download)
-            download(confLanguages(data.download, opts), opts, this.async());
-    });
+            // download
+            else if (data.download) {
+                var downloadMeta = confLanguages(data.download, opts);
+                downloadMeta.project = opts.project;
+                download(downloadMeta, opts, this.async());
+            }
+        });
 };
 
 function download(data, opts, done) {
@@ -58,7 +61,7 @@ function recursiveGetExports(data,output,done) {
         api_token: data.apiToken,
         id: data.project,
         action: 'export',
-        type: 'json',
+        type: 'key_value_json',
         'language': data.langs.pop()
     };
     var endpoint = 'https://poeditor.com/api/';
@@ -102,28 +105,9 @@ function downloadExport(url, path, handler) {
 
         var translations = JSON.parse(body);
 
-        // This translates the po data into something usable, basically an object of
-        // {translationKey: translationText}
-        var convertedTranslations = {};
-        for (var key in translations) {
-            var trans = translations[key];
-            var context = trans.context.length === 0 ? 'common' : trans.context;
-
-            if (trans.term.length === 0) {
-                continue;
-            }
-
-            if (typeof convertedTranslations[context] === 'undefined') {
-                convertedTranslations[context] = {};
-            }
-
-            convertedTranslations[context][trans.term] = trans.definition && trans.definition.length > 0 ?
-                trans.definition : trans.term;
-        }
-
-        var contents = JSON.stringify(convertedTranslations);
+        translations = JSON.stringify(keypath.expand(translations));
         // Dump the json contents to a file
-        fs.writeFile(path, contents, function(err) {
+        fs.writeFile(path, translations, function(err) {
             if (err) {
                 throw err;
             }
