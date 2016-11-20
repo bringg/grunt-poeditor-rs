@@ -2,6 +2,7 @@
 
 var fs = require('fs'),
     path = require('path'),
+    _ = require('underscore'),
     request = require('request'),
     keypath = require('keypather')();
 
@@ -106,7 +107,10 @@ function downloadExport(url, path, handler) {
 
         var translations = JSON.parse(body);
 
-        translations = JSON.stringify(keypath.expand(translations));
+        // Remove empty/null translations
+        translations = _.omit(keypath.flatten(translations), _.isEmpty);
+
+        translations = JSON.stringify(keypath.expand(translations), null, 2);
         // Dump the json contents to a file
         fs.writeFile(path, translations, function(err) {
             if (err) {
