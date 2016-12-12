@@ -8,12 +8,11 @@ var fs = require('fs'),
 
 var grunt;
 
+var ENDPOINT = 'https://poeditor.com/api/';
+
 module.exports = function(g) {
     grunt = g;
-    grunt.registerMultiTask('poeditor',
-    'Call POEditor\'s APIs & download from a grunt task',
-    function() {
-
+    grunt.registerMultiTask('poeditor', 'Call POEditor\'s APIs & download from a grunt task', function() {
         var data = this.data;
         var opts = this.options();
 
@@ -26,15 +25,62 @@ module.exports = function(g) {
                 done();
             });
         }
+        // download
+        else if (data.download) {
+            var downloadMeta = confLanguages(data.download, opts);
+            downloadMeta.project = opts.project;
+            download(downloadMeta, opts, this.async());
+        }
+        // download_all
+        else if (data.download_all) {
+            var done = this.async();
+            getLanguagesToDownload(data.download_all, opts, function(err, languages) {
+              if(err) {
+                done(err);
+                return;
+              }
 
-            // download
-            else if (data.download) {
-                var downloadMeta = confLanguages(data.download, opts);
-                downloadMeta.project = opts.project;
-                download(downloadMeta, opts, this.async());
-            }
-        });
+              opts.languages = _.extend(languages, opts.languages_override);
+              grunt.log.writeln('Will download: ' + Object.keys(opts.languages).join(', '));
+
+              var downloadMeta = confLanguages(data.download_all, opts);
+              downloadMeta.project = opts.project;
+              download(downloadMeta, opts, done);
+            });
+        }
+    });
 };
+
+function getLanguagesToDownload(data, config, callback) {
+    var creds = {
+        api_token: config.apiToken,
+        id: config.project,
+        action: 'list_languages'
+    };
+
+    request.post(ENDPOINT, {form: creds, json: true}, function(err, response, body) {
+        if (err) {
+          callback(err);
+          return;
+        }
+
+        if(!body.list) {
+          callback(new Error('No body.list'));
+          return;
+        }
+
+        var languagesToDownload = _.filter(body.list, function(lang) {
+          return lang.percentage > data.minimum_coverage;
+        });
+
+        var languagesList = {};
+        _.each(languagesToDownload, function(lang) {
+          languagesList[lang.code] = lang.code;
+        });
+
+        callback(null, languagesList);
+    });
+}
 
 function download(data, opts, done) {
     data.apiToken = opts.apiToken;
@@ -66,8 +112,7 @@ function recursiveGetExports(data,output,done) {
         type: 'key_value_json',
         'language': data.langs.pop()
     };
-    var endpoint = 'https://poeditor.com/api/';
-    request.post(endpoint, {form: creds}, function(err, response, body) {
+    request.post(ENDPOINT, {form: creds}, function(err, response, body) {
         if (err)
             throw err;
         body = JSON.parse(body);
@@ -146,6 +191,7 @@ function callAPI(command, handler) {
     req.write(postData);
     req.end();
 }
+
 
 function confLanguages(obj, opts) {
     cleanLanguages(obj);
