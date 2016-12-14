@@ -34,6 +34,7 @@ module.exports = function(g) {
         // download_all
         else if (data.download_all) {
             var done = this.async();
+            opts = data.download_all.options || opts;
             getLanguagesToDownload(data.download_all, opts, function(err, languages) {
               if(err) {
                 done(err);
