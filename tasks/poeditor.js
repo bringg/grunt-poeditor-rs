@@ -34,7 +34,7 @@ module.exports = function(g) {
         // download_all
         else if (data.download_all) {
             var done = this.async();
-            opts = data.download_all.options || opts;
+            opts = _.extend(opts, data.download_all.options);
             getLanguagesToDownload(data.download_all, opts, function(err, languages) {
               if(err) {
                 done(err);
@@ -97,7 +97,7 @@ function download(data, opts, done) {
             for (var i in paths)
                 grunt.log.writeln('->'.red, paths[i]);
             done();
-        });
+        }, opts);
     });
 }
 
@@ -123,8 +123,7 @@ function recursiveGetExports(data,output,done) {
     });
 }
 
-function downloadExports(exports, data, handler) {
-
+function downloadExports(exports, data, handler, opts) {
     var numDownloads = 0;
     for (var polang in exports)
         numDownloads++;
@@ -141,11 +140,14 @@ function downloadExports(exports, data, handler) {
 
             if (--numDownloads == 0)
                 handler(paths);
-        });
+        }, opts.disable_expand);
     }
 }
 
-function downloadExport(url, path, handler) {
+function downloadExport(url, path, handler, disable_expand) {
+    if(_.isUndefined(disable_expand)) {
+      disable_expand = false;
+    }
     request.get(url, function(err, response, body) {
         if (err || response.statusCode !== 200) {
             throw "Problem getting file";
@@ -156,7 +158,11 @@ function downloadExport(url, path, handler) {
         // Remove empty/null translations
         translations = _.omit(keypath.flatten(translations), _.isEmpty);
 
-        translations = JSON.stringify(keypath.expand(translations), null, 2);
+        if(!disable_expand) {
+          translations = keypath.expand(translations);
+        }
+
+        translations = JSON.stringify(translations, null, 2);
         // Dump the json contents to a file
         fs.writeFile(path, translations, function(err) {
             if (err) {
