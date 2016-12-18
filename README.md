@@ -24,4 +24,33 @@ poeditor: {
   }
 ```
 
+## Download all languages
+Another task is to download all languages, with minimum poeditor coverage.
+
+```
+poeditor: {
+  // 'download_languages' - name of your grunt task
+  download_languages: {
+    // 'download_all' - name of the grunt task to dowload all languages
+    download_all: {
+      // Same configuration as download
+      dest: 'tests/?.json',
+
+      // Specify minimum coverage here
+      minimum_coverage: 40
+    }
+  },
+  options: {
+    apiToken: 'insert-your-token-here',
+
+    // Override languages files if you don't want to use
+    // poeditor language code.
+    languages_override: {
+      'vi': 'vi_VN'
+    },
+    project: 'your projectID goes here (as a string)'
+  }
+}
+```
+
 Parts of the grunt implementation were inspired by work of Philippe Vignau, https://github.com/Philoozushi/grunt-poeditor-pz.
