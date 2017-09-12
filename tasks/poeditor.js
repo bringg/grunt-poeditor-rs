@@ -4,6 +4,7 @@ var fs = require('fs'),
     path = require('path'),
     _ = require('underscore'),
     request = require('request'),
+    _ = require('underscore'),
     keypath = require('keypather')();
 
 var grunt;
@@ -84,20 +85,82 @@ function getLanguagesToDownload(data, config, callback) {
 }
 
 function download(data, opts, done) {
-    data.apiToken = opts.apiToken;
-    data.langs = [];
-    for (var plang in data.languages.toLocal)
-        data.langs.push(plang);
 
-    recursiveGetExports(data, {}, function(exports) {
-        for (var polang in exports) {
-            grunt.log.writeln('->'.green, polang+':', exports[polang]);
+    data.apiToken = opts.apiToken;
+
+    var reqeusts = _.map(data.languages.toLocal, function(plang) {
+       return _.assign({}, data, { language: plang });
+    });
+
+    // data.langs = [];
+    // for (var plang in data.languages.toLocal)
+    //     data.langs.push(plang);
+    //
+
+    var async = require('async');
+
+    console.time('Dispatch');
+    async.map(reqeusts, getExport, function(err, output) {
+        console.timeEnd('Dispatch');
+
+        grunt.log.writeln('Finished ' + reqeusts.length +  ' requests', err, output);
+        if(err) {
+            throw err;
         }
+
+        var exports = _.reduce(output, function(exportLang, exports) {
+            // The original code, skips languages without body.item
+            if(!exportLang.body.item) {
+                return;
+            }
+
+            exports[exportLang.language] = exportLang.body.item;
+            grunt.log.writeln('->'.green, exportLang.language+':', exportLang.body.item);
+        }, {});
+
         downloadExports(exports, data, function(paths) {
             for (var i in paths)
                 grunt.log.writeln('->'.red, paths[i]);
             done();
         }, opts);
+    });
+
+    // recursiveGetExports(data, {}, function(exports) {
+    //     for (var polang in exports) {
+    //         grunt.log.writeln('->'.green, polang+':', exports[polang]);
+    //     }
+    //     downloadExports(exports, data, function(paths) {
+    //         for (var i in paths)
+    //             grunt.log.writeln('->'.red, paths[i]);
+    //         done();
+    //     });
+    // });
+}
+
+function getExport(data, cb) {
+    var creds = {
+        api_token: data.apiToken,
+        id: data.project,
+        action: 'export',
+        type: 'key_value_json',
+        'language': data.language
+    };
+    var endpoint = 'https://poeditor.com/api/';
+
+    console.time('Fetching ' + creds.language);
+    request.post(endpoint, {form: creds, gzip: true}, function(err, response, body) {
+        console.timeEnd('Fetching ' + creds.language);
+        if (err) {
+            cb(err, null);
+            return;
+        }
+
+        body = JSON.parse(body);
+        cb(null, { language: data.language, body: body });
+
+        // if (body.item)
+        //     output[creds.language] = body.item;
+        // recursiveGetExports(data, output, done);
     });
 }
 
